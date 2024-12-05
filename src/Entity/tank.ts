@@ -8,6 +8,9 @@ export class Tank {
   speed: number;
   health: number;
   private size: number;
+  private bulletCount: number = 5;
+  private reloadTime: number = 5000; // Time to recover one bullet (in milliseconds)
+  private reloadTimer: number = 0;
 
   constructor(position: Vector2D, direction: number) {
     this.position = position;
@@ -61,13 +64,18 @@ export class Tank {
     }
   }
 
-  shoot(): Bullet {
-    const rad = (this.direction * Math.PI) / 180; // Convert direction to radians
-    const bulletPos = new Vector2D(
-      this.position.x + Math.cos(rad) * (this.size / 2 + 5),
-      this.position.y + Math.sin(rad) * (this.size / 2 + 5)
-    );
-    return new Bullet(bulletPos, this.direction); // Bullet gets the correct direction
+  shoot(): Bullet | null {
+    if (this.bulletCount > 0) {
+      this.bulletCount--;
+      const rad = (this.direction * Math.PI) / 180;
+      const bulletPos = new Vector2D(
+        this.position.x + Math.cos(rad) * (this.size / 2 + 5),
+        this.position.y + Math.sin(rad) * (this.size / 2 + 5)
+      );
+      return new Bullet(bulletPos, this.direction);
+    } else {
+      return null; // No bullets left
+    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -86,7 +94,16 @@ export class Tank {
     ctx.restore(); // Restore context for other drawings
   }
 
-  update(): void {}
+  update(deltaTime: number): void {
+    if (this.bulletCount < 5) {
+      this.reloadTimer += deltaTime;
+      if (this.reloadTimer >= this.reloadTime) {
+        this.bulletCount++;
+        this.reloadTimer = 0;
+      }
+    }
+    // ...existing code...
+  }
 
   getSize(): number {
     return this.size;

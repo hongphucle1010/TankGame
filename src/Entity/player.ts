@@ -9,9 +9,8 @@ export class Player {
     this.score = 0;
   }
 
-  update(): void {
-    // Update player's tank and logic
-    this.tank.update();
+  update(deltaTime: number): void {
+    this.tank.update(deltaTime);
   }
 
   render(ctx: CanvasRenderingContext2D): void {

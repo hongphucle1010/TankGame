@@ -10,6 +10,7 @@ export class Game {
   private isRunning: boolean;
   private ctx: CanvasRenderingContext2D;
   private keyState: { [key: string]: boolean } = {};
+  private lastUpdateTime: number = performance.now();
 
   constructor(ctx: CanvasRenderingContext2D, tankSize: number) {
     this.ctx = ctx;
@@ -36,17 +37,21 @@ export class Game {
   private gameLoop(): void {
     if (!this.isRunning) return;
 
-    this.update();
+    const currentTime = performance.now();
+    const deltaTime = currentTime - this.lastUpdateTime;
+    this.lastUpdateTime = currentTime;
+
+    this.update(deltaTime);
     this.render();
 
     requestAnimationFrame(() => this.gameLoop());
   }
 
-  private update(): void {
+  private update(deltaTime: number): void {
     this.handleInput();
 
     // Update tanks, bullets, and other game elements
-    this.players.forEach((player) => player.update());
+    this.players.forEach((player) => player.update(deltaTime));
     this.bullets.forEach((bullet) => bullet.update());
 
     // Remove inactive bullets
@@ -71,7 +76,9 @@ export class Game {
       }
       if (this.keyState["j"]) {
         const bullet = playerTank.shoot();
-        this.addBullet(bullet);
+        if (bullet) {
+          this.addBullet(bullet);
+        }
         // Prevent continuous shooting by resetting the key state
         this.keyState["j"] = false;
       }
