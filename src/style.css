@@ -14,8 +14,9 @@ body {
     var(--secondary-color)
   );
   display: flex;
-  justify-content: center;
+  justify-content:space-around;
   align-items: center;
+  gap: 10px;
 }
 
 #app {
@@ -28,9 +29,16 @@ body {
   padding: 20px;
 }
 
+#huongdan{
+  background-color: seashell;
+  padding: 5px;
+  border-radius: 10%;
+  max-width: 300px;
+}
+
 h1 {
   color: var(--accent-color);
-  font-size: 3rem;
+  font-size: 2rem;
   margin: 0;
   margin-bottom: 10px;
   text-transform: uppercase;
