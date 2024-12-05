@@ -34,8 +34,10 @@ export class Tank {
     return new Bullet(bulletPos, this.direction);
   }
 
-  render(): void {
+  render(ctx: CanvasRenderingContext2D): void {
     // Draw the tank on the screen
+    ctx.fillStyle = "blue";
+    ctx.fillRect(this.position.x - 10, this.position.y - 10, 20, 20);
   }
 
   update(): void {
