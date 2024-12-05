@@ -11,6 +11,7 @@ export class Tank {
   private bulletCount: number = 5;
   private reloadTime: number = 5000; // Time to recover one bullet (in milliseconds)
   private reloadTimer: number = 0;
+  isAlive: boolean = true;
 
   constructor(position: Vector2D, direction: number) {
     this.position = position;
@@ -79,7 +80,7 @@ export class Tank {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    if (!ctx) return;
+    if (!ctx || !this.isAlive) return;
     ctx.save();
     // Move canvas origin to the tank's position
     ctx.translate(this.position.x, this.position.y);

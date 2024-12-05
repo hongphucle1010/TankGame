@@ -1,6 +1,7 @@
 import { Arena } from "./Entity/arena";
 import { Bullet } from "./Entity/bullet";
 import { Player } from "./Entity/player";
+import { Tank } from "./Entity/tank";
 import { Wall } from "./Entity/wall";
 
 export class Game {
@@ -52,15 +53,28 @@ export class Game {
 
     // Update tanks, bullets, and other game elements
     this.players.forEach((player) => player.update(deltaTime));
-    this.bullets.forEach((bullet) => bullet.update());
+    this.bullets.forEach((bullet) =>
+      bullet.update(deltaTime, this.getAliveTanks())
+    );
 
     // Remove inactive bullets
     this.bullets = this.bullets.filter((bullet) => bullet.isActive);
+
+    // Remove dead players
+    this.players = this.players.filter((player) => player.tank.isAlive);
+  }
+
+  private getAliveTanks(): Tank[] {
+    return this.players
+      .filter((player) => player.tank.isAlive)
+      .map((player) => player.tank);
   }
 
   private handleInput(): void {
     if (this.players.length > 0) {
       const playerTank = this.players[0].tank;
+
+      if (!playerTank.isAlive) return;
 
       if (this.keyState["w"]) {
         playerTank.move(true, this.getWalls());

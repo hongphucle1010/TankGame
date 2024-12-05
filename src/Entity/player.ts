@@ -14,6 +14,10 @@ export class Player {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    this.tank.render(ctx);
+    if (this.tank.isAlive) {
+      this.tank.render(ctx);
+    } else {
+      // Optionally, render explosion effect or remove tank from render
+    }
   }
 }
