@@ -1,5 +1,4 @@
 import { Game } from "./game";
-import { Player } from "./Entity/player";
 import { Tank } from "./Entity/tank";
 import { Vector2D } from "./Entity/vector2d";
 
@@ -18,14 +17,16 @@ if (ctx) {
   );
   const tankSize = playerTank.getSize();
 
-  // Initialize and start the game
+  // Initialize the game
   const game = new Game(ctx, tankSize);
-  game.startGame();
 
-  // Add players with random positions
+  // Add players with random positions BEFORE starting the game
   game.addPlayer("Phúc");
   game.addPlayer("Tuấn");
-  
+
+  // Start the game AFTER adding players
+  game.startGame();
+
   // Optionally, add more players as needed
   // game.addPlayer("Player Three");
   // game.addPlayer("Player Four");

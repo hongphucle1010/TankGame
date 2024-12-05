@@ -63,6 +63,19 @@ export class Game {
 
     // Remove dead players
     this.players = this.players.filter((player) => player.tank.isAlive);
+
+    console.log(`Players remaining: ${this.players.length}`);
+
+    // Check for game over condition
+    if (this.players.length === 1) {
+      console.log(`Winner: ${this.players[0].name}`);
+      this.isRunning = false;
+      this.showWinnerModal(this.players[0].name);
+    } else if (this.players.length === 0) {
+      console.log("It's a draw!");
+      this.isRunning = false;
+      this.showWinnerModal(null); // No winner (draw)
+    }
   }
 
   private getAliveTanks(): Tank[] {
@@ -98,10 +111,13 @@ export class Game {
       // Apply controls
       if (controls) {
         // Determine movement direction
-        if (this.keyState[controls.forward] || this.keyState[controls.backward]) {
+        if (
+          this.keyState[controls.forward] ||
+          this.keyState[controls.backward]
+        ) {
           const forward = this.keyState[controls.forward];
           const rad = (player.tank.direction * Math.PI) / 180;
-          const delta = (forward ? player.tank.speed : -player.tank.speed);
+          const delta = forward ? player.tank.speed : -player.tank.speed;
           const newPosition = new Vector2D(
             player.tank.position.x + Math.cos(rad) * delta,
             player.tank.position.y + Math.sin(rad) * delta
@@ -110,7 +126,11 @@ export class Game {
           // Check for collision with walls and other tanks
           if (
             !player.tank.checkCollision(newPosition, this.getWalls()) &&
-            !this.isPositionOccupied(newPosition, player.tank.getSize(), player.tank)
+            !this.isPositionOccupied(
+              newPosition,
+              player.tank.getSize(),
+              player.tank
+            )
           ) {
             player.tank.position = newPosition;
           }
@@ -134,13 +154,17 @@ export class Game {
     });
   }
 
-  private isPositionOccupied(position: Vector2D, size: number, movingTank: Tank): boolean {
+  private isPositionOccupied(
+    position: Vector2D,
+    size: number,
+    movingTank: Tank
+  ): boolean {
     return this.players.some((player) => {
       if (player.tank === movingTank || !player.tank.isAlive) return false;
       const dx = position.x - player.tank.position.x;
       const dy = position.y - player.tank.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance < (size / 2 + player.tank.getSize() / 2);
+      return distance < size / 2 + player.tank.getSize() / 2;
     });
   }
 
@@ -161,11 +185,12 @@ export class Game {
 
     for (let i = 0; i < maxAttempts; i++) {
       const x = Math.random() * (this.ctx.canvas.width - 2 * padding) + padding;
-      const y = Math.random() * (this.ctx.canvas.height - 2 * padding) + padding;
+      const y =
+        Math.random() * (this.ctx.canvas.height - 2 * padding) + padding;
       position = new Vector2D(x, y);
 
       // Check for overlap with existing tanks
-      const overlapWithTanks = this.players.some(player => {
+      const overlapWithTanks = this.players.some((player) => {
         const dx = position.x - player.tank.position.x;
         const dy = position.y - player.tank.position.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -173,7 +198,7 @@ export class Game {
       });
 
       // Check for overlap with walls
-      const overlapWithWalls = this.getWalls().some(wall => {
+      const overlapWithWalls = this.getWalls().some((wall) => {
         const tankLeft = position.x - tankSize / 2;
         const tankRight = position.x + tankSize / 2;
         const tankTop = position.y - tankSize / 2;
@@ -206,11 +231,18 @@ export class Game {
       return;
     }
 
-    const position = this.generateRandomPosition();
-    const direction = Math.floor(Math.random() * 360);
-    const tank = new Tank(position, direction);
-    const player = new Player(tank, name);
-    this.players.push(player);
+    try {
+      const position = this.generateRandomPosition();
+      const direction = Math.floor(Math.random() * 360);
+      const tank = new Tank(position, direction);
+      const player = new Player(tank, name);
+      this.players.push(player);
+      console.log(
+        `Added player: ${name} at position (${position.x}, ${position.y})`
+      );
+    } catch (error) {
+      console.error("Error adding player:", error);
+    }
   }
 
   addBullet(bullet: Bullet): void {
@@ -220,5 +252,66 @@ export class Game {
 
   getWalls(): Wall[] {
     return this.arena.getWalls();
+  }
+
+  private showWinnerModal(winnerName: string | null): void {
+    // Create modal elements
+    const modalOverlay = document.createElement("div");
+    modalOverlay.id = "gameOverModal";
+    modalOverlay.style.position = "fixed";
+    modalOverlay.style.top = "0";
+    modalOverlay.style.left = "0";
+    modalOverlay.style.width = "100%";
+    modalOverlay.style.height = "100%";
+    modalOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    modalOverlay.style.display = "flex";
+    modalOverlay.style.justifyContent = "center";
+    modalOverlay.style.alignItems = "center";
+    modalOverlay.style.zIndex = "1000";
+
+    const modalContent = document.createElement("div");
+    modalContent.style.backgroundColor = "#fff";
+    modalContent.style.padding = "20px";
+    modalContent.style.borderRadius = "8px";
+    modalContent.style.textAlign = "center";
+    modalContent.style.minWidth = "300px";
+
+    const message = document.createElement("h2");
+    if (winnerName) {
+      message.textContent = `${winnerName} Wins!`;
+    } else {
+      message.textContent = `It's a Draw!`;
+    }
+
+    const playAgainButton = document.createElement("button");
+    playAgainButton.textContent = "Play Again";
+    playAgainButton.style.padding = "10px 20px";
+    playAgainButton.style.fontSize = "16px";
+    playAgainButton.style.marginTop = "20px";
+    playAgainButton.style.cursor = "pointer";
+
+    playAgainButton.addEventListener("click", () => {
+      // Remove modal
+      document.body.removeChild(modalOverlay);
+      // Restart the game
+      this.restartGame();
+    });
+
+    modalContent.appendChild(message);
+    modalContent.appendChild(playAgainButton);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+  }
+
+  private restartGame(): void {
+    // Reset game state
+    this.players = [];
+    this.bullets = [];
+    this.isRunning = true;
+    this.lastUpdateTime = performance.now();
+
+    // Optionally, reinitialize players
+    // For example, add players again or reload the page
+    window.location.reload(); // Simple way to restart
   }
 }
