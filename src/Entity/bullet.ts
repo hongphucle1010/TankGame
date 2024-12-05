@@ -23,9 +23,10 @@ export class Bullet {
 
     render(ctx: CanvasRenderingContext2D): void {
         // Draw the bullet
-        ctx.fillStyle = "black";
+        if (!ctx) return;
         ctx.beginPath();
-        ctx.arc(this.position.x, this.position.y, 2, 0, Math.PI * 2);
+        ctx.arc(bullet.position.x, bullet.position.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
         ctx.fill();
     }
 }

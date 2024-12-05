@@ -36,9 +36,16 @@ export class Tank {
 
   render(ctx: CanvasRenderingContext2D): void {
     // Draw the tank on the screen
-    ctx.fillStyle = "blue";
-    ctx.fillRect(this.position.x - 10, this.position.y - 10, 20, 20);
-  }
+      if (!ctx) return;
+      ctx.save();
+      ctx.translate(this.position.x, this.position.y);
+      ctx.rotate(this.direction);
+      ctx.fillStyle = 'green';
+      ctx.fillRect(-15, -15, 30, 30);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(-5, -20, 10, 20); // gun
+      ctx.restore();
+    }
 
   update(): void {
     // Update logic for the tank
