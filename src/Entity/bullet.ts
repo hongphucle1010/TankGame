@@ -21,7 +21,11 @@ export class Bullet {
         // Handle collisions or deactivation
     }
 
-    render(): void {
+    render(ctx: CanvasRenderingContext2D): void {
         // Draw the bullet
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, 2, 0, Math.PI * 2);
+        ctx.fill();
     }
 }

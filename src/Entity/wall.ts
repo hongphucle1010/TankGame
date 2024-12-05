@@ -11,7 +11,9 @@ export class Wall {
         this.height = height;
     }
 
-    render(): void {
+    render(ctx: CanvasRenderingContext2D): void {
         // Draw the wall
+        ctx.fillStyle = "brown";
+        ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
     }
 }

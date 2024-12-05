@@ -2,8 +2,10 @@ import { Wall } from "./wall";
 
 export class Arena {
   walls: Wall[];
+  private ctx: CanvasRenderingContext2D;
 
-  constructor() {
+  constructor(ctx: CanvasRenderingContext2D) {
+    this.ctx = ctx;
     this.walls = this.generateWalls();
   }
 
@@ -13,6 +15,6 @@ export class Arena {
   }
 
   render(): void {
-    this.walls.forEach((wall) => wall.render());
+    this.walls.forEach((wall) => wall.render(this.ctx));
   }
 }
