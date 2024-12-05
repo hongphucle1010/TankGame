@@ -111,7 +111,7 @@ export class Tank {
     ctx.restore(); // Restore context for other drawings
 
     // Draw the player's name above the tank
-    ctx.font = "14px Arial";
+    ctx.font = "14px Handjet";
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     ctx.fillText(playerName, this.position.x, this.position.y - this.size / 2 - 10);

@@ -64,15 +64,11 @@ export class Game {
     // Remove dead players
     this.players = this.players.filter((player) => player.tank.isAlive);
 
-    console.log(`Players remaining: ${this.players.length}`);
-
     // Check for game over condition
     if (this.players.length === 1) {
-      console.log(`Winner: ${this.players[0].name}`);
       this.isRunning = false;
       this.showWinnerModal(this.players[0].name);
     } else if (this.players.length === 0) {
-      console.log("It's a draw!");
       this.isRunning = false;
       this.showWinnerModal(null); // No winner (draw)
     }
@@ -237,9 +233,6 @@ export class Game {
       const tank = new Tank(position, direction);
       const player = new Player(tank, name);
       this.players.push(player);
-      console.log(
-        `Added player: ${name} at position (${position.x}, ${position.y})`
-      );
     } catch (error) {
       console.error("Error adding player:", error);
     }
@@ -286,9 +279,10 @@ export class Game {
     const playAgainButton = document.createElement("button");
     playAgainButton.textContent = "Play Again";
     playAgainButton.style.padding = "10px 20px";
-    playAgainButton.style.fontSize = "16px";
+    playAgainButton.style.fontSize = "20px";
     playAgainButton.style.marginTop = "20px";
     playAgainButton.style.cursor = "pointer";
+    playAgainButton.style.fontFamily = "inherit";
 
     playAgainButton.addEventListener("click", () => {
       // Remove modal
