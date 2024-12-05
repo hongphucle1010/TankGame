@@ -9,11 +9,7 @@ if (ctx) {
   ctx.fillStyle = "gray";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Example: Draw a rectangle
-  ctx.fillStyle = "green";
-  ctx.fillRect(10, 10, 50, 50);
-
   // Initialize and start the game
-  const game = new Game();
+  const game = new Game(ctx);
   game.startGame();
 }

@@ -7,9 +7,11 @@ export class Game {
   private players: Player[];
   private bullets: Bullet[];
   private isRunning: boolean;
+  private ctx: CanvasRenderingContext2D;
 
-  constructor() {
-    this.arena = new Arena();
+  constructor(ctx: CanvasRenderingContext2D) {
+    this.ctx = ctx;
+    this.arena = new Arena(ctx);
     this.players = [];
     this.bullets = [];
     this.isRunning = false;
@@ -39,10 +41,13 @@ export class Game {
   }
 
   private render(): void {
+    // Clear the canvas
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+
     // Render the game elements on screen
     this.arena.render();
-    this.players.forEach((player) => player.render());
-    this.bullets.forEach((bullet) => bullet.render(this.arena.ctx, this.bullets));
+    this.players.forEach((player) => player.render(this.ctx));
+    this.bullets.forEach((bullet) => bullet.render(this.arena.ctx));
   }
 
   addPlayer(player: Player): void {

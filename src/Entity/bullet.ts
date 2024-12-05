@@ -21,14 +21,12 @@ export class Bullet {
         // Handle collisions or deactivation
     }
 
-    render(ctx: CanvasRenderingContext2D, bullets: Bullet[]): void {
-        bullets.forEach((bullet) => {
-            if (!ctx) return;
-            ctx.beginPath();
-            ctx.arc(bullet.position.x, bullet.position.y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = 'red';
-            ctx.fill();
-        });
+    render(ctx: CanvasRenderingContext2D): void {
+        // Draw the bullet
+        if (!ctx) return;
+        ctx.beginPath();
+        ctx.arc(bullet.position.x, bullet.position.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
     }
-
 }
