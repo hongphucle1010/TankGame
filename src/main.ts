@@ -1,4 +1,5 @@
 import "./style.css";
+import { Game } from "./game";
 
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");
@@ -11,4 +12,8 @@ if (ctx) {
   // Example: Draw a rectangle
   ctx.fillStyle = "green";
   ctx.fillRect(10, 10, 50, 50);
+
+  // Initialize and start the game
+  const game = new Game();
+  game.startGame();
 }
