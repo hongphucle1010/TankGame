@@ -33,12 +33,27 @@ export class Game {
     // Update tanks, bullets, and other game elements
     this.players.forEach((player) => player.update());
     this.bullets.forEach((bullet) => bullet.update());
+
+    // Remove inactive bullets
+    this.bullets = this.bullets.filter((bullet) => bullet.isActive);
   }
 
   private render(): void {
     // Render the game elements on screen
     this.arena.render();
     this.players.forEach((player) => player.render());
-    this.bullets.forEach((bullet) => bullet.render());
+    this.bullets.forEach((bullet) => bullet.render(this.arena.ctx, this.bullets));
+  }
+
+  addPlayer(player: Player): void {
+    if (this.players.length < 4) {
+      this.players.push(player);
+    } else {
+      console.error("Maximum number of players reached.");
+    }
+  }
+
+  addBullet(bullet: Bullet): void {
+    this.bullets.push(bullet);
   }
 }
