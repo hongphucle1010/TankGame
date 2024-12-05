@@ -22,15 +22,11 @@ if (ctx) {
   const game = new Game(ctx, tankSize);
   game.startGame();
 
-  // Add a new player to test
-  const player = new Player(playerTank);
-  game.addPlayer(player);
-
-  // Add a second player to test
-  const playerTank2 = new Tank(
-    new Vector2D(100, 100), // Different starting position
-    Math.floor(Math.random() * 360)
-  );
-  const player2 = new Player(playerTank2);
-  game.addPlayer(player2);
+  // Add players with random positions
+  game.addPlayer("Phúc");
+  game.addPlayer("Tuấn");
+  
+  // Optionally, add more players as needed
+  // game.addPlayer("Player Three");
+  // game.addPlayer("Player Four");
 }

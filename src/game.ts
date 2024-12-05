@@ -91,7 +91,7 @@ export class Game {
           backward: "ArrowDown",
           rotateLeft: "ArrowLeft",
           rotateRight: "ArrowRight",
-          shoot: "m",
+          shoot: "1",
         };
       }
 
@@ -147,16 +147,70 @@ export class Game {
   private render(): void {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.arena.render();
-    this.players.forEach((player) => player.render(this.ctx));
+    this.players.forEach((player) => {
+      player.tank.render(this.ctx, player.name);
+    });
     this.bullets.forEach((bullet) => bullet.render(this.ctx));
   }
 
-  addPlayer(player: Player): void {
-    if (this.players.length < 4) {
-      this.players.push(player);
-    } else {
-      console.error("Maximum number of players reached.");
+  private generateRandomPosition(): Vector2D {
+    const tankSize = 30; // Assuming tank size is 30
+    const padding = tankSize / 2 + 10; // Padding from walls and edges
+    const maxAttempts = 100;
+    let position: Vector2D;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const x = Math.random() * (this.ctx.canvas.width - 2 * padding) + padding;
+      const y = Math.random() * (this.ctx.canvas.height - 2 * padding) + padding;
+      position = new Vector2D(x, y);
+
+      // Check for overlap with existing tanks
+      const overlapWithTanks = this.players.some(player => {
+        const dx = position.x - player.tank.position.x;
+        const dy = position.y - player.tank.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < (tankSize + player.tank.getSize()) / 2 + 10; // 10 is extra buffer
+      });
+
+      // Check for overlap with walls
+      const overlapWithWalls = this.getWalls().some(wall => {
+        const tankLeft = position.x - tankSize / 2;
+        const tankRight = position.x + tankSize / 2;
+        const tankTop = position.y - tankSize / 2;
+        const tankBottom = position.y + tankSize / 2;
+
+        const wallLeft = wall.position.x;
+        const wallRight = wall.position.x + wall.width;
+        const wallTop = wall.position.y;
+        const wallBottom = wall.position.y + wall.height;
+
+        return (
+          tankRight > wallLeft &&
+          tankLeft < wallRight &&
+          tankBottom > wallTop &&
+          tankTop < wallBottom
+        );
+      });
+
+      if (!overlapWithTanks && !overlapWithWalls) {
+        return position;
+      }
     }
+
+    throw new Error("Failed to generate non-overlapping position for tank.");
+  }
+
+  addPlayer(name: string): void {
+    if (this.players.length >= 4) {
+      console.error("Maximum number of players reached.");
+      return;
+    }
+
+    const position = this.generateRandomPosition();
+    const direction = Math.floor(Math.random() * 360);
+    const tank = new Tank(position, direction);
+    const player = new Player(tank, name);
+    this.players.push(player);
   }
 
   addBullet(bullet: Bullet): void {

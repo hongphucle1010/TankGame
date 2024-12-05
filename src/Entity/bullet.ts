@@ -13,7 +13,7 @@ export class Bullet {
   constructor(position: Vector2D, direction: number) {
     this.position = position;
     this.direction = direction;
-    this.speed = 3; 
+    this.speed = 7; 
     this.isActive = true;
     this.lifetime = 10000; // 10 seconds in milliseconds
   }

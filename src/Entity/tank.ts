@@ -95,7 +95,7 @@ export class Tank {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
+  render(ctx: CanvasRenderingContext2D, playerName: string): void {
     if (!ctx || !this.isAlive) return;
     ctx.save();
     // Move canvas origin to the tank's position
@@ -109,6 +109,12 @@ export class Tank {
     ctx.fillStyle = "black";
     ctx.fillRect(0, -3, 20, 6); // Gun extends to the right
     ctx.restore(); // Restore context for other drawings
+
+    // Draw the player's name above the tank
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.fillText(playerName, this.position.x, this.position.y - this.size / 2 - 10);
   }
 
   update(deltaTime: number): void {
