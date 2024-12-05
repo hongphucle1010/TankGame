@@ -3,18 +3,23 @@ import { Tank } from "./tank";
 export class Player {
   tank: Tank;
   score: number;
+  name: string;
 
-  constructor(tank: Tank) {
+  constructor(tank: Tank, name: string) {
     this.tank = tank;
     this.score = 0;
+    this.name = name;
   }
 
-  update(): void {
-    // Update player's tank and logic
-    this.tank.update();
+  update(deltaTime: number): void {
+    this.tank.update(deltaTime);
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    this.tank.render(ctx);
+    if (this.tank.isAlive) {
+      this.tank.render(ctx, this.name);
+    } else {
+      // Optionally, render explosion effect or remove tank from render
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { Tank } from "./tank";
 import { Vector2D } from "./vector2d";
 import { Wall } from "./wall";
 
@@ -12,7 +13,7 @@ export class Bullet {
   constructor(position: Vector2D, direction: number) {
     this.position = position;
     this.direction = direction;
-    this.speed = 3; 
+    this.speed = 7; 
     this.isActive = true;
     this.lifetime = 10000; // 10 seconds in milliseconds
   }
@@ -21,19 +22,32 @@ export class Bullet {
     this.walls = walls;
   }
 
-  update(): void {
+  update(deltaTime: number, tanks: Tank[]): void {
     const rad = (this.direction * Math.PI) / 180;
-    this.position.x += Math.cos(rad) * this.speed;
-    this.position.y += Math.sin(rad) * this.speed;
+    const distance = (this.speed * deltaTime) / 16.67; // Adjust speed based on deltaTime
+    this.position.x += Math.cos(rad) * distance;
+    this.position.y += Math.sin(rad) * distance;
 
-    // Handle collisions or deactivation
+    // Check for collisions with walls
     if (this.checkCollision()) {
       this.bounce();
     }
+
+    // Check for collisions with tanks
+    for (const tank of tanks) {
+      if (tank.isAlive && this.checkTankCollision(tank)) {
+        // Tank is hit
+        tank.isAlive = false;
+        this.isActive = false;
+        break;
+      }
+    }
+
+    // Handle bullet lifetime
+    this.lifetime -= deltaTime;
     if (this.lifetime <= 0) {
       this.isActive = false;
     }
-    this.lifetime -= 16.67; // Approximate time per frame at 60fps
   }
 
   private checkCollision(): boolean {
@@ -127,6 +141,14 @@ export class Bullet {
       this.position.y + bulletRadius > wall.position.y &&
       this.position.y - bulletRadius < wall.position.y + wall.height
     );
+  }
+
+  private checkTankCollision(tank: Tank): boolean {
+    const dx = this.position.x - tank.position.x;
+    const dy = this.position.y - tank.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const collisionDistance = 5 + tank.getSize() / 2; // Bullet radius + tank radius
+    return distance < collisionDistance;
   }
 
   render(ctx: CanvasRenderingContext2D): void {

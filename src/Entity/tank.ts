@@ -8,6 +8,13 @@ export class Tank {
   speed: number;
   health: number;
   private size: number;
+  private bulletCount: number = 5;
+  private reloadTime: number = 5000; // Time to recover one bullet (in milliseconds)
+  private reloadTimer: number = 0;
+  isAlive: boolean = true;
+  
+  // Add the color property
+  private color: string;
 
   constructor(position: Vector2D, direction: number) {
     this.position = position;
@@ -15,6 +22,19 @@ export class Tank {
     this.speed = 1;
     this.health = 100;
     this.size = 30; // Define the tank size
+    
+    // Initialize the color with a random color
+    this.color = this.getRandomColor();
+  }
+
+  // Add a method to generate a random color
+  private getRandomColor(): string {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
   }
 
   move(forward: boolean, walls: Wall[]): void {
@@ -30,7 +50,7 @@ export class Tank {
     }
   }
 
-  private checkCollision(position: Vector2D, walls: Wall[]): boolean {
+  checkCollision(position: Vector2D, walls: Wall[]): boolean {
     // Define the tank's axis-aligned bounding box (AABB)
     const tankLeft = position.x - this.size / 2;
     const tankRight = position.x + this.size / 2;
@@ -61,32 +81,52 @@ export class Tank {
     }
   }
 
-  shoot(): Bullet {
-    const rad = (this.direction * Math.PI) / 180; // Convert direction to radians
-    const bulletPos = new Vector2D(
-      this.position.x + Math.cos(rad) * (this.size / 2 + 5),
-      this.position.y + Math.sin(rad) * (this.size / 2 + 5)
-    );
-    return new Bullet(bulletPos, this.direction); // Bullet gets the correct direction
+  shoot(): Bullet | null {
+    if (this.bulletCount > 0) {
+      this.bulletCount--;
+      const rad = (this.direction * Math.PI) / 180;
+      const bulletPos = new Vector2D(
+        this.position.x + Math.cos(rad) * (this.size / 2 + 5),
+        this.position.y + Math.sin(rad) * (this.size / 2 + 5)
+      );
+      return new Bullet(bulletPos, this.direction);
+    } else {
+      return null; // No bullets left
+    }
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    if (!ctx) return;
+  render(ctx: CanvasRenderingContext2D, playerName: string): void {
+    if (!ctx || !this.isAlive) return;
     ctx.save();
     // Move canvas origin to the tank's position
     ctx.translate(this.position.x, this.position.y);
     // Rotate canvas to match tank's direction
     ctx.rotate((this.direction * Math.PI) / 180);
-    // Draw tank body
-    ctx.fillStyle = "green";
+    // Draw tank body with the random color
+    ctx.fillStyle = this.color;
     ctx.fillRect(-15, -15, 30, 30); // Tank body centered at (0, 0)
     // Draw gun rotated 90° counterclockwise
     ctx.fillStyle = "black";
     ctx.fillRect(0, -3, 20, 6); // Gun extends to the right
     ctx.restore(); // Restore context for other drawings
+
+    // Draw the player's name above the tank
+    ctx.font = "14px Handjet";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.fillText(playerName, this.position.x, this.position.y - this.size / 2 - 10);
   }
 
-  update(): void {}
+  update(deltaTime: number): void {
+    if (this.bulletCount < 5) {
+      this.reloadTimer += deltaTime;
+      if (this.reloadTimer >= this.reloadTime) {
+        this.bulletCount++;
+        this.reloadTimer = 0;
+      }
+    }
+    // ...existing code...
+  }
 
   getSize(): number {
     return this.size;
