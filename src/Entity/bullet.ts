@@ -25,7 +25,7 @@ export class Bullet {
         // Draw the bullet
         if (!ctx) return;
         ctx.beginPath();
-        ctx.arc(bullet.position.x, bullet.position.y, 5, 0, Math.PI * 2);
+        ctx.arc(this.position.x, this.position.y, 5, 0, Math.PI * 2);
         ctx.fillStyle = 'red';
         ctx.fill();
     }
