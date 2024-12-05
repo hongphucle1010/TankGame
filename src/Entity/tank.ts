@@ -12,6 +12,9 @@ export class Tank {
   private reloadTime: number = 5000; // Time to recover one bullet (in milliseconds)
   private reloadTimer: number = 0;
   isAlive: boolean = true;
+  
+  // Add the color property
+  private color: string;
 
   constructor(position: Vector2D, direction: number) {
     this.position = position;
@@ -19,6 +22,19 @@ export class Tank {
     this.speed = 1;
     this.health = 100;
     this.size = 30; // Define the tank size
+    
+    // Initialize the color with a random color
+    this.color = this.getRandomColor();
+  }
+
+  // Add a method to generate a random color
+  private getRandomColor(): string {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
   }
 
   move(forward: boolean, walls: Wall[]): void {
@@ -34,7 +50,7 @@ export class Tank {
     }
   }
 
-  private checkCollision(position: Vector2D, walls: Wall[]): boolean {
+  checkCollision(position: Vector2D, walls: Wall[]): boolean {
     // Define the tank's axis-aligned bounding box (AABB)
     const tankLeft = position.x - this.size / 2;
     const tankRight = position.x + this.size / 2;
@@ -86,8 +102,8 @@ export class Tank {
     ctx.translate(this.position.x, this.position.y);
     // Rotate canvas to match tank's direction
     ctx.rotate((this.direction * Math.PI) / 180);
-    // Draw tank body
-    ctx.fillStyle = "green";
+    // Draw tank body with the random color
+    ctx.fillStyle = this.color;
     ctx.fillRect(-15, -15, 30, 30); // Tank body centered at (0, 0)
     // Draw gun rotated 90° counterclockwise
     ctx.fillStyle = "black";

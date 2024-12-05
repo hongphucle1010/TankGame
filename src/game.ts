@@ -2,6 +2,7 @@ import { Arena } from "./Entity/arena";
 import { Bullet } from "./Entity/bullet";
 import { Player } from "./Entity/player";
 import { Tank } from "./Entity/tank";
+import { Vector2D } from "./Entity/vector2d";
 import { Wall } from "./Entity/wall";
 
 export class Game {
@@ -71,32 +72,76 @@ export class Game {
   }
 
   private handleInput(): void {
-    if (this.players.length > 0) {
-      const playerTank = this.players[0].tank;
+    this.players.forEach((player, index) => {
+      if (!player.tank.isAlive) return;
 
-      if (!playerTank.isAlive) return;
+      // Define control keys for each player
+      let controls;
+      if (index === 0) {
+        controls = {
+          forward: "w",
+          backward: "s",
+          rotateLeft: "a",
+          rotateRight: "d",
+          shoot: "j",
+        };
+      } else if (index === 1) {
+        controls = {
+          forward: "ArrowUp",
+          backward: "ArrowDown",
+          rotateLeft: "ArrowLeft",
+          rotateRight: "ArrowRight",
+          shoot: "m",
+        };
+      }
 
-      if (this.keyState["w"]) {
-        playerTank.move(true, this.getWalls());
-      }
-      if (this.keyState["s"]) {
-        playerTank.move(false, this.getWalls());
-      }
-      if (this.keyState["a"]) {
-        playerTank.rotate(-2);
-      }
-      if (this.keyState["d"]) {
-        playerTank.rotate(2);
-      }
-      if (this.keyState["j"]) {
-        const bullet = playerTank.shoot();
-        if (bullet) {
-          this.addBullet(bullet);
+      // Apply controls
+      if (controls) {
+        // Determine movement direction
+        if (this.keyState[controls.forward] || this.keyState[controls.backward]) {
+          const forward = this.keyState[controls.forward];
+          const rad = (player.tank.direction * Math.PI) / 180;
+          const delta = (forward ? player.tank.speed : -player.tank.speed);
+          const newPosition = new Vector2D(
+            player.tank.position.x + Math.cos(rad) * delta,
+            player.tank.position.y + Math.sin(rad) * delta
+          );
+
+          // Check for collision with walls and other tanks
+          if (
+            !player.tank.checkCollision(newPosition, this.getWalls()) &&
+            !this.isPositionOccupied(newPosition, player.tank.getSize(), player.tank)
+          ) {
+            player.tank.position = newPosition;
+          }
         }
-        // Prevent continuous shooting by resetting the key state
-        this.keyState["j"] = false;
+
+        if (this.keyState[controls.rotateLeft]) {
+          player.tank.rotate(-2);
+        }
+        if (this.keyState[controls.rotateRight]) {
+          player.tank.rotate(2);
+        }
+        if (this.keyState[controls.shoot]) {
+          const bullet = player.tank.shoot();
+          if (bullet) {
+            this.addBullet(bullet);
+          }
+          // Prevent continuous shooting by resetting the key state
+          this.keyState[controls.shoot] = false;
+        }
       }
-    }
+    });
+  }
+
+  private isPositionOccupied(position: Vector2D, size: number, movingTank: Tank): boolean {
+    return this.players.some((player) => {
+      if (player.tank === movingTank || !player.tank.isAlive) return false;
+      const dx = position.x - player.tank.position.x;
+      const dy = position.y - player.tank.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < (size / 2 + player.tank.getSize() / 2);
+    });
   }
 
   private render(): void {
