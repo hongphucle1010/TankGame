@@ -13,6 +13,7 @@ export class Game {
   private ctx: CanvasRenderingContext2D;
   private keyState: { [key: string]: boolean } = {};
   private lastUpdateTime: number = performance.now();
+  private peerPlayer: Player | null = null;
 
   constructor(ctx: CanvasRenderingContext2D, tankSize: number) {
     this.ctx = ctx;
@@ -29,6 +30,15 @@ export class Game {
     window.addEventListener("keyup", (event) => {
       this.keyState[event.key] = false;
     });
+  }
+
+  // Add a method to initialize the game with coordination data
+  initializeWithData(gameData: any): void {
+    // Set arena walls
+    this.setArenaWalls(gameData.arenaWalls);
+
+    // Add any additional initialization based on gameData
+    this.startGame();
   }
 
   startGame(): void {
@@ -221,14 +231,14 @@ export class Game {
     throw new Error("Failed to generate non-overlapping position for tank.");
   }
 
-  addPlayer(name: string): void {
+  addPlayer(name: string, initialPosition?: Vector2D): void {
     if (this.players.length >= 4) {
       console.error("Maximum number of players reached.");
       return;
     }
 
     try {
-      const position = this.generateRandomPosition();
+      const position = initialPosition || this.generateRandomPosition();
       const direction = Math.floor(Math.random() * 360);
       const tank = new Tank(position, direction);
       const player = new Player(tank, name);
@@ -307,5 +317,40 @@ export class Game {
     // Optionally, reinitialize players
     // For example, add players again or reload the page
     window.location.reload(); // Simple way to restart
+  }
+
+  getArena(): Arena {
+    return this.arena;
+  }
+
+  /**
+   * Sets the arena walls with the provided walls.
+   * @param walls Array of Wall instances to set as the arena walls.
+   */
+  setArenaWalls(walls: Wall[]): void {
+    this.arena.walls = walls;
+    this.render(); // Re-render the arena to display the new walls
+  }
+
+  /**
+   * Sets the peer player's position and initializes their tank.
+   * @param position The peer player's starting position.
+   */
+  setPeerPlayerPosition(position: Vector2D): void {
+    const direction = Math.floor(Math.random() * 360);
+    const tank = new Tank(position, direction);
+    const player = new Player(tank, "Peer");
+    this.peerPlayer = player;
+    this.players.push(player);
+    this.render(); // Render the peer player
+  }
+
+  /**
+   * Starts the game if both players are initialized.
+   */
+  initializeGame(): void {
+    if (this.players.length >= 2) {
+      this.startGame();
+    }
   }
 }
