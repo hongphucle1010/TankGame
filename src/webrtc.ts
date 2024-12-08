@@ -10,17 +10,9 @@ import {
   addDoc,
   updateDoc,
   Firestore,
+  getDocs,
+  deleteDoc,
 } from "firebase/firestore";
-
-interface FirebaseConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-  measurementId: string;
-}
 
 class WebRTC {
   private app: FirebaseApp;
@@ -29,7 +21,7 @@ class WebRTC {
   private dataChannel: RTCDataChannel | null;
   dataChannelOpen: Promise<void>;
   private resolveDataChannelOpen!: () => void;
-  onDataReceived: (data: any) => void = () => {};
+  onDataReceived: (data: WebRTCData) => void = () => {};
 
   constructor(firebaseConfig: FirebaseConfig) {
     this.app = initializeApp(firebaseConfig);
@@ -76,21 +68,43 @@ class WebRTC {
     }
   }
 
-  sendData(data: any): void {
+  sendData(data: WebRTCData): void {
     if (this.dataChannel && this.dataChannel.readyState === "open") {
       this.dataChannel.send(JSON.stringify(data));
     }
   }
 
   async createRoom(roomId: string): Promise<void> {
+    const roomRef = doc(this.firestore, "rooms", roomId);
+    const roomSnapshot = await getDoc(roomRef);
+
+    if (roomSnapshot.exists()) {
+      // Clear existing room data
+      const offerCandidates = collection(roomRef, "offerCandidates");
+      const answerCandidates = collection(roomRef, "answerCandidates");
+
+      const offerCandidatesSnapshot = await getDocs(offerCandidates);
+      offerCandidatesSnapshot.forEach(async (doc) => {
+        await deleteDoc(doc.ref);
+      });
+
+      const answerCandidatesSnapshot = await getDocs(answerCandidates);
+      answerCandidatesSnapshot.forEach(async (doc) => {
+        await deleteDoc(doc.ref);
+      });
+
+      await deleteDoc(roomRef);
+    }
+
     this.dataChannel = this.pc.createDataChannel("dataChannel");
     this.setupDataChannel();
 
-    const roomRef = doc(this.firestore, "rooms", roomId);
     const offerCandidates = collection(roomRef, "offerCandidates"); // Create a new collection for offer candidates
     const answerCandidates = collection(roomRef, "answerCandidates"); // Create a new collection for answer candidates
     this.pc.onicecandidate = (event) => {
-      event.candidate && addDoc(offerCandidates, event.candidate.toJSON());
+      if (event.candidate) {
+        addDoc(offerCandidates, event.candidate.toJSON());
+      }
     };
     const offerDescription = await this.pc.createOffer();
     await this.pc.setLocalDescription(offerDescription);
@@ -126,7 +140,9 @@ class WebRTC {
     const answerCandidates = collection(roomRef, "answerCandidates");
 
     this.pc.onicecandidate = (event) => {
-      event.candidate && addDoc(answerCandidates, event.candidate.toJSON());
+      if (event.candidate) {
+        addDoc(answerCandidates, event.candidate.toJSON());
+      }
     };
 
     const roomSnapshot = await getDoc(roomRef);
@@ -184,6 +200,22 @@ const firebaseConfig: FirebaseConfig = {
   appId: import.meta.env.VITE_APP_ID,
   measurementId: import.meta.env.VITE_MEASUREMENT_ID,
 };
+
+interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+  measurementId: string;
+}
+
+export interface WebRTCData {
+  type: "ask" | "answer";
+  topic: "wall" | "player" | "bullet" | "name" | "ready";
+  data?: string;
+}
 
 const webrtc = new WebRTC(firebaseConfig);
 export default webrtc;
