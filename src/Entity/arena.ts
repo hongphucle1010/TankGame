@@ -179,6 +179,10 @@ export class Arena {
     return this.walls;
   }
 
+  setWalls(walls: Wall[]): void {
+    this.walls = walls;
+  }
+
   render(): void {
     this.walls.forEach((wall) => wall.render(this.ctx));
   }

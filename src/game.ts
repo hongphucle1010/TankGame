@@ -13,13 +13,19 @@ export class Game {
   private ctx: CanvasRenderingContext2D;
   private keyState: { [key: string]: boolean } = {};
   private lastUpdateTime: number = performance.now();
+  private showWinnerModal: (winner: Player | null) => void;
 
-  constructor(ctx: CanvasRenderingContext2D, tankSize: number) {
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    tankSize: number,
+    showWinnerModal: (winnerName: Player | null) => void
+  ) {
     this.ctx = ctx;
     this.arena = new Arena(ctx, tankSize);
     this.players = [];
     this.bullets = [];
     this.isRunning = false;
+    this.showWinnerModal = showWinnerModal;
 
     // Set up key event listeners
     window.addEventListener("keydown", (event) => {
@@ -67,7 +73,7 @@ export class Game {
     // Check for game over condition
     if (this.players.length === 1) {
       this.isRunning = false;
-      this.showWinnerModal(this.players[0].name);
+      this.showWinnerModal(this.players[0]);
     } else if (this.players.length === 0) {
       this.isRunning = false;
       this.showWinnerModal(null); // No winner (draw)
@@ -173,7 +179,7 @@ export class Game {
     this.bullets.forEach((bullet) => bullet.render(this.ctx));
   }
 
-  private generateRandomPosition(): Vector2D {
+  generateRandomPosition(): Vector2D {
     const tankSize = 30; // Assuming tank size is 30
     const padding = tankSize / 2 + 10; // Padding from walls and edges
     const maxAttempts = 100;
@@ -221,14 +227,14 @@ export class Game {
     throw new Error("Failed to generate non-overlapping position for tank.");
   }
 
-  addPlayer(name: string): void {
+  addPlayerWithName(name: string, initialPosition?: Vector2D): void {
     if (this.players.length >= 4) {
       console.error("Maximum number of players reached.");
       return;
     }
 
     try {
-      const position = this.generateRandomPosition();
+      const position = initialPosition || this.generateRandomPosition();
       const direction = Math.floor(Math.random() * 360);
       const tank = new Tank(position, direction);
       const player = new Player(tank, name);
@@ -236,6 +242,15 @@ export class Game {
     } catch (error) {
       console.error("Error adding player:", error);
     }
+  }
+
+  addPlayer(player: Player): void {
+    if (this.players.length >= 4) {
+      console.error("Maximum number of players reached.");
+      return;
+    }
+    player.tank.position = this.generateRandomPosition(); // Randomize position
+    this.players.push(player);
   }
 
   addBullet(bullet: Bullet): void {
@@ -247,65 +262,22 @@ export class Game {
     return this.arena.getWalls();
   }
 
-  private showWinnerModal(winnerName: string | null): void {
-    // Create modal elements
-    const modalOverlay = document.createElement("div");
-    modalOverlay.id = "gameOverModal";
-    modalOverlay.style.position = "fixed";
-    modalOverlay.style.top = "0";
-    modalOverlay.style.left = "0";
-    modalOverlay.style.width = "100%";
-    modalOverlay.style.height = "100%";
-    modalOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    modalOverlay.style.display = "flex";
-    modalOverlay.style.justifyContent = "center";
-    modalOverlay.style.alignItems = "center";
-    modalOverlay.style.zIndex = "1000";
-
-    const modalContent = document.createElement("div");
-    modalContent.style.backgroundColor = "#fff";
-    modalContent.style.padding = "20px";
-    modalContent.style.borderRadius = "8px";
-    modalContent.style.textAlign = "center";
-    modalContent.style.minWidth = "300px";
-
-    const message = document.createElement("h2");
-    if (winnerName) {
-      message.textContent = `${winnerName} Wins!`;
-    } else {
-      message.textContent = `It's a Draw!`;
-    }
-
-    const playAgainButton = document.createElement("button");
-    playAgainButton.textContent = "Play Again";
-    playAgainButton.style.padding = "10px 20px";
-    playAgainButton.style.fontSize = "20px";
-    playAgainButton.style.marginTop = "20px";
-    playAgainButton.style.cursor = "pointer";
-    playAgainButton.style.fontFamily = "inherit";
-
-    playAgainButton.addEventListener("click", () => {
-      // Remove modal
-      document.body.removeChild(modalOverlay);
-      // Restart the game
-      this.restartGame();
-    });
-
-    modalContent.appendChild(message);
-    modalContent.appendChild(playAgainButton);
-    modalOverlay.appendChild(modalContent);
-    document.body.appendChild(modalOverlay);
+  getArena(): Arena {
+    return this.arena;
   }
 
-  private restartGame(): void {
-    // Reset game state
-    this.players = [];
-    this.bullets = [];
-    this.isRunning = true;
-    this.lastUpdateTime = performance.now();
+  /**
+   * Sets the arena walls with the provided walls.
+   * @param walls Array of Wall instances to set as the arena walls.
+   */
+  setArenaWalls(walls: Wall[]): void {
+    this.arena.walls = walls;
+    this.render(); // Re-render the arena to display the new walls
+  }
 
-    // Optionally, reinitialize players
-    // For example, add players again or reload the page
-    window.location.reload(); // Simple way to restart
+  initializeGame(): void {
+    if (this.players.length >= 2) {
+      this.startGame();
+    }
   }
 }

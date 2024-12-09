@@ -1,4 +1,5 @@
 import { Tank } from "./tank";
+import { Vector2D } from "./vector2d";
 
 export class Player {
   tank: Tank;
@@ -9,6 +10,15 @@ export class Player {
     this.tank = tank;
     this.score = 0;
     this.name = name;
+  }
+
+  static createPlayer(
+    name: string,
+    position: Vector2D,
+    direction: number
+  ): Player {
+    const tank = new Tank(position, direction);
+    return new Player(tank, name);
   }
 
   update(deltaTime: number): void {
