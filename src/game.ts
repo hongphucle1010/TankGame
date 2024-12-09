@@ -4,6 +4,7 @@ import { Player } from "./Entity/player";
 import { Tank } from "./Entity/tank";
 import { Vector2D } from "./Entity/vector2d";
 import { Wall } from "./Entity/wall";
+import webrtc from "./webrtc";
 
 export class Game {
   private arena: Arena;
@@ -12,6 +13,7 @@ export class Game {
   private isRunning: boolean;
   private ctx: CanvasRenderingContext2D;
   private keyState: { [key: string]: boolean } = {};
+  keyState2: { [key: string]: boolean } = {};
   private lastUpdateTime: number = performance.now();
   private showWinnerModal: (winner: Player | null) => void;
 
@@ -27,14 +29,40 @@ export class Game {
     this.isRunning = false;
     this.showWinnerModal = showWinnerModal;
 
-    // Set up key event listeners
+    // Set up key event listeners for player 1
     window.addEventListener("keydown", (event) => {
-      this.keyState[event.key] = true;
+      let ifKeys = false;
+      const keysPlayer1 = ["w", "a", "s", "d", "j"];
+      if (keysPlayer1.includes(event.key)) {
+        ifKeys = true;
+        this.keyState[event.key] = true;
+      }
+      if (ifKeys) {
+        webrtc.sendData({
+          type: "answer",
+          topic: "keyState",
+          data: JSON.stringify(this.keyState),
+        });
+      }
     });
 
     window.addEventListener("keyup", (event) => {
-      this.keyState[event.key] = false;
+      let ifKeys = false;
+      const keysPlayer1 = ["w", "a", "s", "d", "j"];
+      if (keysPlayer1.includes(event.key)) {
+        ifKeys = true;
+        this.keyState[event.key] = false;
+      }
+      if (ifKeys) {
+        webrtc.sendData({
+          type: "answer",
+          topic: "keyState",
+          data: JSON.stringify(this.keyState),
+        });
+      }
     });
+
+    // Do not add event listeners for keyState2
   }
 
   startGame(): void {
@@ -90,68 +118,59 @@ export class Game {
     this.players.forEach((player, index) => {
       if (!player.tank.isAlive) return;
 
-      // Define control keys for each player
-      let controls;
+      const controls = {
+        forward: "w",
+        backward: "s",
+        rotateLeft: "a",
+        rotateRight: "d",
+        shoot: "j",
+      };
+      let keyState;
+
       if (index === 0) {
-        controls = {
-          forward: "w",
-          backward: "s",
-          rotateLeft: "a",
-          rotateRight: "d",
-          shoot: "j",
-        };
+        keyState = this.keyState;
       } else if (index === 1) {
-        controls = {
-          forward: "ArrowUp",
-          backward: "ArrowDown",
-          rotateLeft: "ArrowLeft",
-          rotateRight: "ArrowRight",
-          shoot: "1",
-        };
+        keyState = this.keyState2; // Use keyState2 for player 2
+      } else {
+        return; // No controls for other players
       }
 
-      // Apply controls
-      if (controls) {
-        // Determine movement direction
+      // Determine movement direction
+      if (keyState[controls.forward] || keyState[controls.backward]) {
+        const forward = keyState[controls.forward];
+        const rad = (player.tank.direction * Math.PI) / 180;
+        const delta = forward ? player.tank.speed : -player.tank.speed;
+        const newPosition = new Vector2D(
+          player.tank.position.x + Math.cos(rad) * delta,
+          player.tank.position.y + Math.sin(rad) * delta
+        );
+
+        // Check for collision with walls and other tanks
         if (
-          this.keyState[controls.forward] ||
-          this.keyState[controls.backward]
+          !player.tank.checkCollision(newPosition, this.getWalls()) &&
+          !this.isPositionOccupied(
+            newPosition,
+            player.tank.getSize(),
+            player.tank
+          )
         ) {
-          const forward = this.keyState[controls.forward];
-          const rad = (player.tank.direction * Math.PI) / 180;
-          const delta = forward ? player.tank.speed : -player.tank.speed;
-          const newPosition = new Vector2D(
-            player.tank.position.x + Math.cos(rad) * delta,
-            player.tank.position.y + Math.sin(rad) * delta
-          );
+          player.tank.position = newPosition;
+        }
+      }
 
-          // Check for collision with walls and other tanks
-          if (
-            !player.tank.checkCollision(newPosition, this.getWalls()) &&
-            !this.isPositionOccupied(
-              newPosition,
-              player.tank.getSize(),
-              player.tank
-            )
-          ) {
-            player.tank.position = newPosition;
-          }
+      if (keyState[controls.rotateLeft]) {
+        player.tank.rotate(-2);
+      }
+      if (keyState[controls.rotateRight]) {
+        player.tank.rotate(2);
+      }
+      if (keyState[controls.shoot]) {
+        const bullet = player.tank.shoot();
+        if (bullet) {
+          this.addBullet(bullet);
         }
-
-        if (this.keyState[controls.rotateLeft]) {
-          player.tank.rotate(-2);
-        }
-        if (this.keyState[controls.rotateRight]) {
-          player.tank.rotate(2);
-        }
-        if (this.keyState[controls.shoot]) {
-          const bullet = player.tank.shoot();
-          if (bullet) {
-            this.addBullet(bullet);
-          }
-          // Prevent continuous shooting by resetting the key state
-          this.keyState[controls.shoot] = false;
-        }
+        // Prevent continuous shooting by resetting the key state
+        keyState[controls.shoot] = false;
       }
     });
   }
@@ -249,7 +268,7 @@ export class Game {
       console.error("Maximum number of players reached.");
       return;
     }
-    player.tank.position = this.generateRandomPosition(); // Randomize position
+    // player.tank.position = this.generateRandomPosition(); // Randomize position
     this.players.push(player);
   }
 
@@ -279,5 +298,10 @@ export class Game {
     if (this.players.length >= 2) {
       this.startGame();
     }
+  }
+
+  // Add a method to update keyState2 programmatically
+  public updatePlayer2KeyState(newKeyState: { [key: string]: boolean }): void {
+    this.keyState2 = { ...newKeyState };
   }
 }

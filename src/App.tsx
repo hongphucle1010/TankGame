@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import HuongDan from "./Components/HuongDan";
 import { EnterPlayerNameModal, WinnerModal } from "./Components/Modal";
 import { Player } from "./Entity/player";
@@ -16,14 +16,82 @@ function App() {
   const [player2, setPlayer2State] = usePlayer();
   const [status, setStatus] = useState<Status>("none");
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("");
   const [game, setGame] = useState<Game | null>(null);
   const receivedData = useReceivingWebRTC();
-  const [walls, setWalls] = useState<Wall[]>([]);
   const [winner, setWinner] = useState<Player | null>(null);
   const [hostReadyToStart, setHostReadyToStart] = useState<boolean>(false);
   const [guestReadyToStart, setGuestReadyToStart] = useState<boolean>(false);
+
+  const dataQueue = useRef<WebRTCData[]>([]);
+  const isProcessing = useRef<boolean>(false);
+
+  const processQueue = async () => {
+    if (isProcessing.current || dataQueue.current.length === 0) return;
+    isProcessing.current = true;
+
+    const data = dataQueue.current.shift();
+    if (data) {
+      if (data.type === "ask") {
+        if (data.topic === "name") {
+          const sendData: WebRTCData = {
+            type: "answer",
+            topic: "name",
+            data: player1?.name,
+          };
+          webrtc.sendData(sendData);
+        }
+      } else if (data.type === "answer") {
+        if (data.topic === "name") {
+          if (!data.data) return;
+          setPlayer2State({
+            name: data.data as string,
+            position: new Vector2D(0, 0),
+            direction: 0,
+          });
+        } else if (data.topic === "player") {
+          if (!data.data) return;
+          const parsedData = JSON.parse(data.data as string) as PlayerData;
+          setPlayer1State(parsedData.guest);
+          setPlayer2State(parsedData.host);
+        } else if (data.topic === "wall") {
+          if (!data.data) return;
+          const walls = JSON.parse(data.data as string);
+          const wallsObj: Wall[] = Wall.constructFromJSONArray(walls);
+          if (game) {
+            game.setArenaWalls(wallsObj);
+            if (status === "join") {
+              setGuestReadyToStart(true);
+            }
+          }
+        } else if (data.topic === "ready") {
+          if (status === "host") {
+            setGuestReadyToStart(true);
+          } else if (status === "join") {
+            setHostReadyToStart(true);
+          }
+        } else if (data.topic === "keyState") {
+          if (!data.data) return;
+          const keyState = JSON.parse(data.data);
+          if (game) {
+            game.keyState2 = keyState;
+          }
+        }
+      }
+    }
+
+    isProcessing.current = false;
+    if (dataQueue.current.length > 0) {
+      processQueue();
+    }
+  };
+
+  useEffect(() => {
+    if (receivedData) {
+      dataQueue.current.push(receivedData);
+      processQueue();
+    }
+  }, [receivedData]);
 
   // Effect to start game
   useEffect(() => {
@@ -33,6 +101,7 @@ function App() {
 
   useEffect(() => {
     if (status !== "join" || !game || !guestReadyToStart) return;
+    if (!player1 || !player2) return;
     const sendData: WebRTCData = {
       type: "answer",
       topic: "ready",
@@ -44,6 +113,9 @@ function App() {
   useEffect(() => {
     if (status !== "host" || !game || !hostReadyToStart) return;
     if (!player1 || !player2) return;
+
+    player1.tank.position = game.generateRandomPosition();
+    player2.tank.position = game.generateRandomPosition();
 
     const sendData: WebRTCData = {
       type: "answer",
@@ -90,53 +162,6 @@ function App() {
     }
   }, [game, status]);
 
-  // Effect to handle received data
-  useEffect(() => {
-    if (!receivedData) return;
-    if (receivedData.type === "ask") {
-      if (receivedData.topic === "name") {
-        const sendData: WebRTCData = {
-          type: "answer",
-          topic: "name",
-          data: player1?.name,
-        };
-        webrtc.sendData(sendData);
-      }
-    } else if (receivedData.type === "answer") {
-      if (receivedData.topic === "name") {
-        if (!receivedData.data) return;
-        setPlayer2State({
-          name: receivedData.data as string,
-          position: new Vector2D(0, 0),
-          direction: 0,
-        });
-      } else if (receivedData.topic === "player") {
-        if (!receivedData.data) return;
-        const parsedData = JSON.parse(
-          receivedData.data as string
-        ) as PlayerData;
-        setPlayer1State(parsedData.host);
-        setPlayer2State(parsedData.guest);
-      } else if (receivedData.topic === "wall") {
-        if (!receivedData.data) return;
-        const walls = JSON.parse(receivedData.data as string);
-        const wallsObj: Wall[] = Wall.constructFromJSONArray(walls);
-        if (game) {
-          game.setArenaWalls(wallsObj);
-          if (status === "join") {
-            setGuestReadyToStart(true);
-          }
-        }
-      } else if (receivedData.topic === "ready") {
-        if (status === "host") {
-          setGuestReadyToStart(true);
-        } else if (status === "join") {
-          setHostReadyToStart(true);
-        }
-      }
-    }
-  }, [receivedData, status, game]);
-
   // Effect to get guest information after guest join
   useEffect(() => {
     if (!isConnected || status === "none") return;
@@ -158,11 +183,6 @@ function App() {
     webrtc.dataChannelOpen.then(handleConnected);
   }, []);
 
-  const handlePlayAgain = useCallback(() => {
-    setWinner(null);
-    setWalls([]);
-  }, [setWinner, setWalls]);
-
   return (
     <>
       <Canvas
@@ -171,7 +191,14 @@ function App() {
         setWinner={setWinner}
         setGame={setGame}
       />
-      <HuongDan />
+      <div
+        style={{
+          marginRight: "5px",
+        }}
+      >
+        <HuongDan />
+        <p id="room">Room: {roomId}</p>
+      </div>
       {!player1 && (
         <EnterPlayerNameModal
           setPlayer={setPlayer1State}
@@ -179,7 +206,7 @@ function App() {
           setStatus={setStatus}
         />
       )}
-      <WinnerModal winner={winner} handlePlayAgain={handlePlayAgain} />
+      <WinnerModal winner={winner} handlePlayAgain={() => {}} />
     </>
   );
 }
