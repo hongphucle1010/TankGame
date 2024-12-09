@@ -10,12 +10,9 @@ export const usePlayer = () => {
     direction: 0,
   });
 
-  useEffect(() => {
-    console.log("Player:", player);
-  }, [player]);
+  useEffect(() => {}, [player]);
 
   useEffect(() => {
-    console.log("PlayerState:", playerState);
     if (playerState.name && playerState.position) {
       setPlayer(
         Player.createPlayer(

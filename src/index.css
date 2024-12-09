@@ -123,3 +123,9 @@ h1 {
 }
 
 /* ...existing styles... */
+#room {
+  background-color: azure;
+  padding: 5px;
+  width: auto;
+  border-radius: 10px;
+}

@@ -213,7 +213,7 @@ interface FirebaseConfig {
 
 export interface WebRTCData {
   type: "ask" | "answer";
-  topic: "wall" | "player" | "bullet" | "name" | "ready";
+  topic: "wall" | "player" | "bullet" | "name" | "ready" | "keyState";
   data?: string;
 }
 
