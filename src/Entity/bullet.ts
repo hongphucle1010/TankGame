@@ -13,7 +13,7 @@ export class Bullet {
   constructor(position: Vector2D, direction: number) {
     this.position = position;
     this.direction = direction;
-    this.speed = 7; 
+    this.speed = 7;
     this.isActive = true;
     this.lifetime = 10000; // 10 seconds in milliseconds
   }
@@ -50,6 +50,19 @@ export class Bullet {
     }
   }
 
+  adjustForDelay(delay: number): void {
+    const rad = (this.direction * Math.PI) / 180;
+    const distance = (this.speed * delay) / 16.67; // Adjust distance based on delay
+    this.position.x += Math.cos(rad) * distance;
+    this.position.y += Math.sin(rad) * distance;
+
+    // Reduce the bullet's lifetime by the delay to keep it consistent
+    this.lifetime -= delay;
+    if (this.lifetime <= 0) {
+      this.isActive = false;
+    }
+  }
+
   private checkCollision(): boolean {
     return this.walls.some((wall) => {
       const bulletLeft = this.position.x - 5;
@@ -73,7 +86,7 @@ export class Bullet {
 
   private bounce(): void {
     const currentRad = (this.direction * Math.PI) / 180;
-    let velocity = new Vector2D(
+    const velocity = new Vector2D(
       Math.cos(currentRad) * this.speed,
       Math.sin(currentRad) * this.speed
     );
@@ -102,7 +115,7 @@ export class Bullet {
         );
 
         // Determine the side of collision
-        let normal = new Vector2D(0, 0);
+        const normal = new Vector2D(0, 0);
         if (overlapX < overlapY) {
           // Collision on left or right side
           normal.x =

@@ -222,7 +222,7 @@ export interface WebRTCData {
     | "keyState"
     | "position"
     | "shoot";
-  data?: string;
+  data?: string; // Data serialized as JSON string
 }
 
 const webrtc = new WebRTC(firebaseConfig);

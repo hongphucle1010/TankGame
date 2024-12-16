@@ -163,10 +163,15 @@ export class Game {
         if (bullet) {
           this.addBullet(bullet);
 
-          // Send a shoot signal over WebRTC when player 1 shoots
+          // Send a shoot signal over WebRTC with bullet data
           webrtc.sendData({
             type: "answer",
             topic: "shoot",
+            data: JSON.stringify({
+              position: bullet.position,
+              direction: bullet.direction,
+              timestamp: Date.now(), // Current timestamp
+            }),
           });
         }
         // Prevent continuous shooting by resetting the key state

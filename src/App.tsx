@@ -10,6 +10,7 @@ import { Game } from "./game";
 import { useReceivingWebRTC } from "./hooks/webrtc";
 import { PlayerState, usePlayer } from "./hooks/player";
 import { Vector2D } from "./Entity/vector2d";
+import { Bullet } from "./Entity/bullet";
 
 function App() {
   const [player1, setPlayer1State] = usePlayer();
@@ -82,12 +83,20 @@ function App() {
           }
         } else if (data.topic === "shoot") {
           if (game && player2) {
-            // Since the shoot signal always comes from player 2,
-            // simulate shooting for player 2's tank
-            const bullet = player2.tank.shoot();
-            if (bullet) {
-              game.addBullet(bullet);
-            }
+            if (!data.data) return;
+            const bulletData = JSON.parse(data.data);
+            const delay = Date.now() - bulletData.timestamp;
+
+            // Create bullet at the given position and direction
+            const bullet = new Bullet(
+              new Vector2D(bulletData.position.x, bulletData.position.y),
+              bulletData.direction
+            );
+
+            // Adjust bullet position based on delay
+            bullet.adjustForDelay(delay);
+            bullet.setWalls(game.getWalls());
+            game.addBullet(bullet);
           }
         }
       }
