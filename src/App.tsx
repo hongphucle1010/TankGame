@@ -228,7 +228,11 @@ function App() {
           setStatus={setStatus}
         />
       )}
-      <WinnerModal winner={winner} handlePlayAgain={() => {}} />
+      <WinnerModal
+        winner={winner}
+        handlePlayAgain={() => {}}
+        isHost={status == "host"}
+      />
     </>
   );
 }
