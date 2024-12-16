@@ -213,8 +213,16 @@ interface FirebaseConfig {
 
 export interface WebRTCData {
   type: "ask" | "answer";
-  topic: "wall" | "player" | "bullet" | "name" | "ready" | "keyState";
-  data?: string;
+  topic:
+    | "wall"
+    | "player"
+    | "bullet"
+    | "name"
+    | "ready"
+    | "keyState"
+    | "position"
+    | "shoot";
+  data?: string; // Data serialized as JSON string
 }
 
 const webrtc = new WebRTC(firebaseConfig);

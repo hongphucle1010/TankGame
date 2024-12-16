@@ -13,7 +13,6 @@ export class Game {
   private isRunning: boolean;
   private ctx: CanvasRenderingContext2D;
   private keyState: { [key: string]: boolean } = {};
-  keyState2: { [key: string]: boolean } = {};
   private lastUpdateTime: number = performance.now();
   private showWinnerModal: (winner: Player | null) => void;
 
@@ -31,38 +30,22 @@ export class Game {
 
     // Set up key event listeners for player 1
     window.addEventListener("keydown", (event) => {
-      let ifKeys = false;
       const keysPlayer1 = ["w", "a", "s", "d", "j"];
       if (keysPlayer1.includes(event.key)) {
-        ifKeys = true;
         this.keyState[event.key] = true;
       }
-      if (ifKeys) {
-        webrtc.sendData({
-          type: "answer",
-          topic: "keyState",
-          data: JSON.stringify(this.keyState),
-        });
-      }
+      // No need to send keyState here
     });
 
     window.addEventListener("keyup", (event) => {
-      let ifKeys = false;
       const keysPlayer1 = ["w", "a", "s", "d", "j"];
       if (keysPlayer1.includes(event.key)) {
-        ifKeys = true;
         this.keyState[event.key] = false;
       }
-      if (ifKeys) {
-        webrtc.sendData({
-          type: "answer",
-          topic: "keyState",
-          data: JSON.stringify(this.keyState),
-        });
-      }
+      // No need to send keyState here
     });
 
-    // Do not add event listeners for keyState2
+    // Remove event listeners for keyState2
   }
 
   startGame(): void {
@@ -85,6 +68,17 @@ export class Game {
 
   private update(deltaTime: number): void {
     this.handleInput();
+
+    // Send player1's position and direction after handling input
+    const player1 = this.players[0];
+    webrtc.sendData({
+      type: "answer",
+      topic: "position",
+      data: JSON.stringify({
+        position: player1.tank.position,
+        direction: player1.tank.direction,
+      }),
+    });
 
     // Update tanks, bullets, and other game elements
     this.players.forEach((player) => player.update(deltaTime));
@@ -128,11 +122,10 @@ export class Game {
       let keyState;
 
       if (index === 0) {
+        // Handle input only for player 1
         keyState = this.keyState;
-      } else if (index === 1) {
-        keyState = this.keyState2; // Use keyState2 for player 2
       } else {
-        return; // No controls for other players
+        return;
       }
 
       // Determine movement direction
@@ -164,10 +157,22 @@ export class Game {
       if (keyState[controls.rotateRight]) {
         player.tank.rotate(2);
       }
+
       if (keyState[controls.shoot]) {
         const bullet = player.tank.shoot();
         if (bullet) {
           this.addBullet(bullet);
+
+          // Send a shoot signal over WebRTC with bullet data
+          webrtc.sendData({
+            type: "answer",
+            topic: "shoot",
+            data: JSON.stringify({
+              position: bullet.position,
+              direction: bullet.direction,
+              timestamp: Date.now(), // Current timestamp
+            }),
+          });
         }
         // Prevent continuous shooting by resetting the key state
         keyState[controls.shoot] = false;
@@ -298,10 +303,5 @@ export class Game {
     if (this.players.length >= 2) {
       this.startGame();
     }
-  }
-
-  // Add a method to update keyState2 programmatically
-  public updatePlayer2KeyState(newKeyState: { [key: string]: boolean }): void {
-    this.keyState2 = { ...newKeyState };
   }
 }

@@ -10,6 +10,7 @@ import { Game } from "./game";
 import { useReceivingWebRTC } from "./hooks/webrtc";
 import { PlayerState, usePlayer } from "./hooks/player";
 import { Vector2D } from "./Entity/vector2d";
+import { Bullet } from "./Entity/bullet";
 
 function App() {
   const [player1, setPlayer1State] = usePlayer();
@@ -70,11 +71,32 @@ function App() {
           } else if (status === "join") {
             setHostReadyToStart(true);
           }
-        } else if (data.topic === "keyState") {
+        } else if (data.topic === "position") {
           if (!data.data) return;
-          const keyState = JSON.parse(data.data);
-          if (game) {
-            game.keyState2 = keyState;
+          const positionData = JSON.parse(data.data);
+          if (game && player2) {
+            player2.tank.position = new Vector2D(
+              positionData.position.x,
+              positionData.position.y
+            );
+            player2.tank.direction = positionData.direction;
+          }
+        } else if (data.topic === "shoot") {
+          if (game && player2) {
+            if (!data.data) return;
+            const bulletData = JSON.parse(data.data);
+            const delay = Date.now() - bulletData.timestamp;
+
+            // Create bullet at the given position and direction
+            const bullet = new Bullet(
+              new Vector2D(bulletData.position.x, bulletData.position.y),
+              bulletData.direction
+            );
+
+            // Adjust bullet position based on delay
+            bullet.adjustForDelay(delay);
+            bullet.setWalls(game.getWalls());
+            game.addBullet(bullet);
           }
         }
       }
