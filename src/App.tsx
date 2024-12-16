@@ -70,11 +70,24 @@ function App() {
           } else if (status === "join") {
             setHostReadyToStart(true);
           }
-        } else if (data.topic === "keyState") {
+        } else if (data.topic === "position") {
           if (!data.data) return;
-          const keyState = JSON.parse(data.data);
-          if (game) {
-            game.keyState2 = keyState;
+          const positionData = JSON.parse(data.data);
+          if (game && player2) {
+            player2.tank.position = new Vector2D(
+              positionData.position.x,
+              positionData.position.y
+            );
+            player2.tank.direction = positionData.direction;
+          }
+        } else if (data.topic === "shoot") {
+          if (game && player2) {
+            // Since the shoot signal always comes from player 2,
+            // simulate shooting for player 2's tank
+            const bullet = player2.tank.shoot();
+            if (bullet) {
+              game.addBullet(bullet);
+            }
           }
         }
       }
