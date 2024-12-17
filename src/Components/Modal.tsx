@@ -86,9 +86,14 @@ export function EnterPlayerNameModal({
 interface WinnerModalProps {
   winner: Player | null;
   handlePlayAgain: () => void;
+  isHost: boolean;
 }
 
-export function WinnerModal({ winner, handlePlayAgain }: WinnerModalProps) {
+export function WinnerModal({
+  winner,
+  handlePlayAgain,
+  isHost,
+}: WinnerModalProps) {
   return (
     winner?.name && (
       <div
@@ -116,18 +121,20 @@ export function WinnerModal({ winner, handlePlayAgain }: WinnerModalProps) {
           }}
         >
           <h2>{winner?.name ? `${winner?.name} Wins!` : `It's a Draw!`}</h2>
-          <button
-            onClick={handlePlayAgain}
-            style={{
-              padding: "10px 20px",
-              fontSize: "20px",
-              marginTop: "20px",
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            Play Again
-          </button>
+          {isHost && (
+            <button
+              onClick={handlePlayAgain}
+              style={{
+                padding: "10px 20px",
+                fontSize: "20px",
+                marginTop: "20px",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Play Again
+            </button>
+          )}
         </div>
       </div>
     )
