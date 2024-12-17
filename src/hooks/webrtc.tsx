@@ -8,7 +8,7 @@ export const useReceivingWebRTC = () => {
 
   useEffect(() => {
     const handleDataReceived = (data: WebRTCData) => {
-      console.log("Data received:", data);
+      // console.log("Data received:", data);
       dataQueue.current.push(data);
       processQueue();
     };

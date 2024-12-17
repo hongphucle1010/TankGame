@@ -23,9 +23,34 @@ function App() {
   const [winner, setWinner] = useState<Player | null>(null);
   const [hostReadyToStart, setHostReadyToStart] = useState<boolean>(false);
   const [guestReadyToStart, setGuestReadyToStart] = useState<boolean>(false);
+  const [player1Score, setPlayer1Score] = useState<number>(0);
+  const [player2Score, setPlayer2Score] = useState<number>(0);
 
   const dataQueue = useRef<WebRTCData[]>([]);
   const isProcessing = useRef<boolean>(false);
+
+  const resetPlayer = () => {
+    if (!winner || !player1 || !player2) return;
+    if (winner == player1) {
+      setPlayer1Score((prev) => prev + 1);
+    } else {
+      setPlayer2Score((prev) => prev + 1);
+    }
+    setPlayer1State((prev) => {
+      return {
+        name: prev.name,
+        position: null,
+        direction: 0,
+      };
+    });
+    setPlayer2State((prev) => {
+      return {
+        name: prev.name,
+        position: null,
+        direction: 0,
+      };
+    });
+  };
 
   const processQueue = async () => {
     if (isProcessing.current || dataQueue.current.length === 0) return;
@@ -52,6 +77,7 @@ function App() {
           });
         } else if (data.topic === "player") {
           if (!data.data) return;
+          setWinner(null);
           const parsedData = JSON.parse(data.data as string) as PlayerData;
           setPlayer1State(parsedData.guest);
           setPlayer2State(parsedData.host);
@@ -69,6 +95,14 @@ function App() {
           if (status === "host") {
             setGuestReadyToStart(true);
           } else if (status === "join") {
+            console.log({
+              player1,
+              player2,
+              game,
+              winner,
+              hostReadyToStart,
+              guestReadyToStart,
+            });
             setHostReadyToStart(true);
           }
         } else if (data.topic === "position") {
@@ -133,6 +167,11 @@ function App() {
 
   // Effect to send guest all information of the game
   useEffect(() => {
+    console.log({
+      status,
+      game,
+      hostReadyToStart,
+    });
     if (status !== "host" || !game || !hostReadyToStart) return;
     if (!player1 || !player2) return;
 
@@ -205,6 +244,25 @@ function App() {
     webrtc.dataChannelOpen.then(handleConnected);
   }, []);
 
+  // Reset states when game ends
+  useEffect(() => {
+    if (winner) {
+      resetPlayer();
+      if (player1 || player2) return;
+      console.log(player1, player2);
+      setHostReadyToStart(false);
+      setGuestReadyToStart(false);
+      setGame(null);
+    }
+  }, [winner, player1, player2]);
+
+  const handlePlayAgain = () => {
+    console.log("Play again");
+    setWinner(null);
+    setPlayer1State((prev) => ({ ...prev, position: new Vector2D(0, 0) }));
+    setPlayer2State((prev) => ({ ...prev, position: new Vector2D(0, 0) }));
+  };
+
   return (
     <>
       <Canvas
@@ -212,6 +270,9 @@ function App() {
         player2={player2}
         setWinner={setWinner}
         setGame={setGame}
+        game={game}
+        player1Score={player1Score}
+        player2Score={player2Score}
       />
       <div
         style={{
@@ -221,7 +282,7 @@ function App() {
         <HuongDan />
         <p id="room">Room: {roomId}</p>
       </div>
-      {!player1 && (
+      {!(player1 || winner) && (
         <EnterPlayerNameModal
           setPlayer={setPlayer1State}
           setRoomId={setRoomId}
@@ -230,7 +291,7 @@ function App() {
       )}
       <WinnerModal
         winner={winner}
-        handlePlayAgain={() => {}}
+        handlePlayAgain={handlePlayAgain}
         isHost={status == "host"}
       />
     </>

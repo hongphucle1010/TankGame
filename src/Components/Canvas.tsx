@@ -7,11 +7,13 @@ export default function Canvas({
   player2,
   setWinner,
   setGame,
+  game,
+  player1Score,
+  player2Score,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
-  const [isSetGame, setIsSetGame] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,20 +29,29 @@ export default function Canvas({
   }, [ctx]);
 
   useEffect(() => {
-    if (!ctx || !player1 || !player2 || isSetGame) return;
-    const game = new Game(ctx, 50, (winner) => {
+    if (!ctx || !player1 || !player2 || game) return;
+    console.log("Creating new game");
+    const newGame = new Game(ctx, 50, (winner) => {
       console.log("Winner:", winner);
       setWinner(winner);
     });
-    game.addPlayer(player1);
-    game.addPlayer(player2);
-    setGame(game);
-    setIsSetGame(true);
-  }, [ctx, isSetGame, player1, player2, setGame, setWinner]);
+    newGame.addPlayer(player1);
+    newGame.addPlayer(player2);
+    setGame(newGame);
+  }, [ctx, game, player1, player2, setGame, setWinner]);
 
   return (
     <div id="app">
-      <h1>HCMUT Xe Tăng Cuồng Nộ</h1>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
+        <p className="score green">{player1Score}</p>
+        <h1>HCMUT Xe Tăng Cuồng Nộ</h1>
+        <p className="score red">{player2Score}</p>
+      </div>
       <canvas id="gameCanvas" width="800" height="600" ref={canvasRef}></canvas>
     </div>
   );
@@ -51,4 +62,7 @@ interface CanvasProps {
   player2: Player | null;
   setWinner: (winner: Player | null) => void;
   setGame: (game: Game | null) => void;
+  game: Game | null;
+  player1Score: number;
+  player2Score: number;
 }

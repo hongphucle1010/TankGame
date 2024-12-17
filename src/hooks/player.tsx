@@ -10,8 +10,6 @@ export const usePlayer = () => {
     direction: 0,
   });
 
-  useEffect(() => {}, [player]);
-
   useEffect(() => {
     if (playerState.name && playerState.position) {
       setPlayer(
@@ -21,6 +19,8 @@ export const usePlayer = () => {
           playerState.direction
         )
       );
+    } else {
+      setPlayer(null);
     }
   }, [playerState]);
   return [player, setPlayerState] as const;
